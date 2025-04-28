@@ -3,7 +3,18 @@ import json
 import re
 import time
 import os
-from openai import OpenAI
+from dotenv import load_dotenv
+import openai #import OpenAI
+
+# Carica variabili d'ambiente da .env
+load_dotenv()
+
+# Prendi la chiave API direttamente
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if not OPENAI_API_KEY:
+    st.error("Errore: API Key mancante! Assicurati che il file .env sia configurato.")
+    st.stop()
 
 # Prova a importare la chiave API dal file di configurazione
 try:
@@ -13,7 +24,6 @@ except ImportError:
     pass  # Se il file non esiste, procedi senza importarlo
 
 def ask_openai(messages_history):
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     system_prompt = (
         "Sei un esperto di analisi di dati statistici ufficiali. "
@@ -26,7 +36,7 @@ def ask_openai(messages_history):
         api_messages.append({"role": msg["role"], "content": msg["content"]})
 
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4.1-nano",
             messages=api_messages,
             stream=False
@@ -36,7 +46,7 @@ def ask_openai(messages_history):
         cleaned_response = re.sub(r"<think>.*?</think>", "", full_response, flags=re.DOTALL).strip()
         return cleaned_response
 
-    except Exception as e:
+    except openai.error.OpenAIError as e:
         return f"Errore nella chiamata a OpenAI: {str(e)}"
 
 def render_user_message(message):
@@ -66,25 +76,14 @@ def render_response(content):
         st.markdown(content, unsafe_allow_html=False)
 
 def reset_conversation():
-    # Salva la tab corrente prima di resettare
-    current_tab = st.session_state.active_tab
-    
-    # Genera un nuovo ID di sessione per forzare il ricaricamento dell'uploader
+    # Nuovo ID sessione per forzare ricaricamento
     st.session_state.session_id = str(time.time())
-    
-    # Reset completo delle variabili di sessione
-    for key in list(st.session_state.keys()):
-        if key not in ["active_tab", "session_id"]:
+
+    # Reset variabili principali
+    for key in ["chat_history", "file_loaded", "uploaded_file"]:
+        if key in st.session_state:
             del st.session_state[key]
-    
-    # Reinizializza le variabili necessarie
-    st.session_state.chat_history = []
-    st.session_state.file_loaded = False
-    st.session_state.selected_mode = None
-    st.session_state.uploaded_file = None
-    
-    # Mantieni la tab corrente
-    st.session_state.active_tab = current_tab
+
 
 def main():
     st.set_page_config(page_title="Storylaizer", layout="centered")
@@ -217,35 +216,32 @@ def main():
         tab_selection = st.radio(
             "Modalità",
             tab_options,
-            index=default_index,
+            index=0 if st.session_state.get("default_tab", "file") == "file" else 1,
             horizontal=True,
             label_visibility="collapsed"
         )
         
         if tab_selection == "📁 Carica un file":
-            st.session_state.active_tab = "file"
-            
-            # Utilizziamo una chiave univoca basata sulla sessione per l'uploader
             uploader_key = f"uploader_{st.session_state.session_id}"
+
             uploaded_file = st.file_uploader(
-                label="Carica il file con i dati da analizzare", 
+                label="Carica il file con i dati da analizzare",
                 type=["xlsx", "xls", "csv"],
                 key=uploader_key
             )
 
             if uploaded_file:
                 st.session_state.uploaded_file = uploaded_file
-                st.success(f"✅ Hai caricato: {uploaded_file.name}")
                 st.session_state.file_loaded = True
-                st.session_state.selected_mode = "file"
+                st.session_state.default_tab = "file"  # Ricorda dove eri
+                st.success(f"✅ Hai caricato: {uploaded_file.name}")
 
                 st.markdown("""<div class="mode-title">Inizia a parlare con l'assistente</div>
                             <div class="mode-subtitle">Fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div>
                             """, unsafe_allow_html=True)
-        else:  # "💬 Parla con l'assistente AI"
-            st.session_state.active_tab = "chat"
-            st.session_state.selected_mode = "chat"
-            
+        elif tab_selection == "💬 Parla con l'assistente AI":
+            st.session_state.default_tab = "chat"  # Ricorda dove eri
+
             st.markdown("""<div class="mode-title">Inizia a parlare con l'assistente</div>
                         <div class="mode-subtitle">Incolla la tabella direttamente nella chat e fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div>
                         """, unsafe_allow_html=True)
