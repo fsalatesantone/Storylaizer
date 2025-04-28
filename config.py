@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Prendi la chiave API in modo sicuro
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')a
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # (Facoltativo) Controllo se la chiave è caricata
 if OPENAI_API_KEY is None:
