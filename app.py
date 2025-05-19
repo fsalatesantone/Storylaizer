@@ -170,25 +170,27 @@ def main():
         st.session_state.previous_tab = "file"
         
         uploader_key = f"uploader_{st.session_state.session_id}"
-        uploaded_file = st.file_uploader("Carica il file con i dati da analizzare", type=["xlsx", "xls", "csv"], key=uploader_key)
+        uploaded_file = st.file_uploader("Carica il file con i dati da analizzare", type=["xlsx"], key=uploader_key)
         if uploaded_file:
             st.session_state.uploaded_file = uploaded_file
             st.session_state.file_loaded = True
             st.success(f"✅ Hai caricato: {uploaded_file.name}")
-            st.markdown("<div class='mode-title'>Inizia a parlare con l'assistente</div><div class='mode-subtitle'>Fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div>", unsafe_allow_html=True)
             
             # Area di chat dopo il caricamento del file
             if st.session_state.file_loaded:
-                st.markdown("---")
                 
                 # Opzioni di conversazione dopo il caricamento del file con chiave specifica per la tab
                 render_conversation_options(tab_key="file_tab")
                 
+                st.markdown("<div class='mode-title'>Inizia a parlare con l'assistente</div><div class='mode-subtitle'>Fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+
                 # Visualizzazione della cronologia chat
                 display_chat_history()
                 
                 # Input utente con chiave univoca
                 handle_chat_input(key="chat_input_file_tab")
+
     
     # Contenuto della seconda tab (Chat)
     with tab2:
@@ -202,10 +204,10 @@ def main():
         st.session_state.active_tab = "chat"
         st.session_state.previous_tab = "chat"
         
-        st.markdown("<div class='mode-title'>Inizia a parlare con l'assistente</div><div class='mode-subtitle'>Incolla la tabella direttamente nella chat e fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div><br>", unsafe_allow_html=True)
-        
         # EXPANDER - Opzioni con chiave specifica per la tab
         render_conversation_options(tab_key="chat_tab")
+        st.markdown("<div class='mode-title'>Inizia a parlare con l'assistente</div><div class='mode-subtitle'>Incolla la tabella direttamente nella chat e fornisci una descrizione dei dati caricati e le istruzioni da eseguire.</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
         # Visualizzazione della cronologia chat
         display_chat_history()
