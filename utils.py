@@ -1,5 +1,7 @@
 import streamlit as st
 import time
+import pandas as pd
+import io
 
 def reset_conversation():
     # Nuovo ID sessione per forzare ricaricamento
@@ -31,3 +33,41 @@ def init_session_state():
         st.session_state.uploaded_file = None
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(time.time())
+
+# Esportazione chat in vari formati
+def export_chat(format_type):
+    if not st.session_state.chat_history:
+        st.warning("Non ci sono messaggi da esportare.")
+        return None
+
+    if format_type == "xlsx":
+        data = [{"Ruolo": "Utente" if msg["role"] == "user" else "Assistente", "Messaggio": msg["content"]} for msg in st.session_state.chat_history]
+        df = pd.DataFrame(data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Conversazione')
+        return output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "conversazione.xlsx"
+
+    elif format_type == "txt":
+        content = ""
+        for msg in st.session_state.chat_history:
+            prefix = "Utente: " if msg["role"] == "user" else "Assistente: "
+            content += f"{prefix}{msg['content']}\n\n"
+        return content.encode(), "text/plain", "conversazione.txt"
+
+    elif format_type == "docx":
+        try:
+            from docx import Document
+            doc = Document()
+            for msg in st.session_state.chat_history:
+                prefix = "Utente: " if msg["role"] == "user" else "Assistente: "
+                p = doc.add_paragraph()
+                runner = p.add_run(f"{prefix}{msg['content']}")
+                runner.bold = msg["role"] == "user"
+                doc.add_paragraph("")
+            output = io.BytesIO()
+            doc.save(output)
+            return output.getvalue(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "conversazione.docx"
+        except ImportError:
+            st.error("Per esportare in formato docx è necessario installare python-docx: pip install python-docx")
+            return None

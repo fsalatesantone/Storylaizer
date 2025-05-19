@@ -6,7 +6,6 @@ def render_user_message(message):
         f"""
         <div style='display: flex; justify-content: flex-end; margin-top: 1rem;'>
             <div style='background-color: #e6f0fa; padding: 10px 15px; border-radius: 15px; max-width: 80%; text-align: right;'>
-                <div style='color: #1f77b4; font-size: 1.2rem; margin-bottom: 5px;'>👋</div>
                 <div style='color: #000;'>{message}</div>
             </div>
         </div>
@@ -23,9 +22,10 @@ def render_response(content):
             if part.startswith("\\boxed"):
                 st.latex(part)
             else:
-                st.markdown(part, unsafe_allow_html=False)
+                # Usa unsafe_allow_html=True per permettere la formattazione markdown
+                st.markdown(part, unsafe_allow_html=True)
     else:
-        st.markdown(content, unsafe_allow_html=False)
+        st.markdown(content, unsafe_allow_html=True)
 
 def load_css():
     st.markdown("""
