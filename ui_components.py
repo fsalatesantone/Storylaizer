@@ -107,3 +107,14 @@ def render_header():
                         <h6 class="app-subtitle" style="color:#0F3D6E;">Trasforma i tuoi dati in analisi AI-driven</h6>
                     </div>
         """, unsafe_allow_html=True)
+
+
+def display_chat_history():
+    """Visualizza la cronologia delle chat"""
+    for msg in st.session_state.chat_history:
+        if msg["role"] == "user":
+            render_user_message(msg["content"])
+        else:
+            with st.chat_message("assistant"):
+                render_response(msg["content"])
+
