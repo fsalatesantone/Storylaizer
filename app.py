@@ -4,8 +4,10 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 import io
+import json
+from openai import OpenAI
 
-from api import ask_openai, ask_openai_with_data
+from api import ask_openai, ask_openai_with_data, build_system_prompt_code_executor
 from ui_components import render_user_message, render_response, load_css, render_header, display_chat_history, render_conversation_options, render_data_preview, render_download_conversation
 from utils import reset_conversation, init_session_state, export_chat
 
@@ -36,17 +38,37 @@ def handle_chat_input(key):
         with st.chat_message("assistant"):
             loading_placeholder = st.empty()
             loading_placeholder.markdown("🧠 *Storylaizer sta scrivendo...*")
-            # risposta = ask_openai(st.session_state.chat_history
-            #                       , model=st.session_state.get("selected_model", "gpt-4.1-nano")
-            #                       , temperature=st.session_state.get("temperature", 0.7)
-            #                       , top_p=st.session_state.get("top_p", 1.0)
-            #                       )
-            risposta = ask_openai_with_data(st.session_state.chat_history
-                                            , model=st.session_state.get("selected_model", "gpt-4.1-nano")
-                                            , dataframe=st.session_state.get("dataframe", None)
-                                            , temperature=st.session_state.get("temperature", 0.7)
-                                            , top_p=st.session_state.get("top_p", 1.0)
-                                            )   
+            # Se la domanda contiene analisi dati, facciamo function-calling
+            if st.session_state.dataframe is not None:
+                from utils import execute_code
+			
+				# Chiediamo al modello di produrre Python
+                client = OpenAI(api_key=get_api_key())
+                fc = client.chat.completions.create(
+					model=st.session_state.selected_model,
+					messages=[{"role":"system","content":build_system_prompt_code_executor()}]
+							+ st.session_state.chat_history
+							+ [{"role":"user","content":user_input}],
+					functions=[{"name":"execute_code", "description":"Esegue codice su df",
+								"parameters":{"type":"object","properties":{"code":{"type":"string"}},"required":["code"]}}],
+					function_call="auto"
+				)
+                function_call = fc.choices[0].message.function_call
+
+                if function_call and hasattr(function_call, "arguments"):
+                    code_data = json.loads(function_call.arguments)
+                    code = code_data.get("code", "")
+                else:
+                    code = None 
+                result = execute_code(code, st.session_state.dataframe)
+                risposta = str(result)
+            else:
+                risposta = ask_openai_with_data(st.session_state.chat_history
+                                                , model=st.session_state.get("selected_model", "gpt-4.1-nano")
+                                                , dataframe=st.session_state.get("dataframe", None)
+                                                , temperature=st.session_state.get("temperature", 0.7)
+                                                , top_p=st.session_state.get("top_p", 1.0)
+                                                )   
             loading_placeholder.empty()
             render_response(risposta)
             st.session_state.chat_history.append({"role": "assistant", "content": risposta})
