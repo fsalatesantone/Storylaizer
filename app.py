@@ -5,7 +5,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import io
 
-from api import ask_openai
+from api import ask_openai, ask_openai_with_data
 from ui_components import render_user_message, render_response, load_css, render_header, display_chat_history, render_conversation_options, render_data_preview, render_download_conversation
 from utils import reset_conversation, init_session_state, export_chat
 
@@ -36,11 +36,17 @@ def handle_chat_input(key):
         with st.chat_message("assistant"):
             loading_placeholder = st.empty()
             loading_placeholder.markdown("🧠 *Storylaizer sta scrivendo...*")
-            risposta = ask_openai(st.session_state.chat_history
-                                  , model=st.session_state.get("selected_model", "gpt-4.1-nano")
-                                  , temperature=st.session_state.get("temperature", 0.7)
-                                  , top_p=st.session_state.get("top_p", 1.0)
-                                  )
+            # risposta = ask_openai(st.session_state.chat_history
+            #                       , model=st.session_state.get("selected_model", "gpt-4.1-nano")
+            #                       , temperature=st.session_state.get("temperature", 0.7)
+            #                       , top_p=st.session_state.get("top_p", 1.0)
+            #                       )
+            risposta = ask_openai_with_data(st.session_state.chat_history
+                                            , model=st.session_state.get("selected_model", "gpt-4.1-nano")
+                                            , dataframe=st.session_state.get("dataframe", None)
+                                            , temperature=st.session_state.get("temperature", 0.7)
+                                            , top_p=st.session_state.get("top_p", 1.0)
+                                            )   
             loading_placeholder.empty()
             render_response(risposta)
             st.session_state.chat_history.append({"role": "assistant", "content": risposta})

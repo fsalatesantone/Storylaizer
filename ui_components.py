@@ -140,11 +140,12 @@ def render_data_preview(df):
     stats["distinct"] = df.nunique()
     # Applico solo alle colonne numeriche
     numeric = df.select_dtypes(include="number")
+    stats["min"]    = numeric.min()
     stats["q1"]     = numeric.quantile(0.25).round(2)
     stats["median"] = numeric.median().round(2)
+    stats["mean"]   = numeric.mean().round(2)
     stats["q3"]     = numeric.quantile(0.75).round(2)
     stats["max"]    = numeric.max()
-    stats["mean"]   = numeric.mean().round(2)
     stats["std"]    = numeric.std().round(2)
     stats["cv"]     = (numeric.std() / numeric.mean()).round(2)
     # Mostro statistiche
