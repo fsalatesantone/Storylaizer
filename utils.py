@@ -20,7 +20,8 @@ def reset_conversation():
     current_tab = st.session_state.get("active_tab", "file")
     
     # Reset variabili principali
-    keys_to_reset = ["chat_history", "file_loaded", "uploaded_file", "dataframe", "data_metadata", "data_errors"]
+    keys_to_reset = ["chat_history", "file_loaded1", "uploaded_file1", "file_loaded2", "uploaded_file2"
+                     , "dataframe", "dataframe_report", "data_metadata", "data_errors"]
     for key in keys_to_reset:
         if key in st.session_state:
             del st.session_state[key]
@@ -34,12 +35,16 @@ def init_session_state():
         st.session_state.chat_history = []
     if "selected_mode" not in st.session_state:
         st.session_state.selected_mode = None
-    if "file_loaded" not in st.session_state:
-        st.session_state.file_loaded = False
+    if "file_loaded1" not in st.session_state:
+        st.session_state.file_loaded1 = False
+    if "uploaded_file1" not in st.session_state:
+        st.session_state.uploaded_file1 = None
+    if "file_loaded2" not in st.session_state:
+        st.session_state.file_loaded2 = False
+    if "uploaded_file2" not in st.session_state:
+        st.session_state.uploaded_file2 = None
     if "active_tab" not in st.session_state:
         st.session_state.active_tab = "file"  # Default alla tab dei file
-    if "uploaded_file" not in st.session_state:
-        st.session_state.uploaded_file = None
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(time.time())
 

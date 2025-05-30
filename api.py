@@ -1,12 +1,19 @@
 import re
 import os
-import openai
+import streamlit as st
+from openai import OpenAI
 import pandas as pd
 from typing import List, Dict, Any, Optional
 # from data_analyzer import DataAnalyzer, create_data_context
 from data_analyzer import create_data_context
 from utils import execute_code
 import json
+
+def get_api_key():
+    api_key = st.secrets.get("OPENAI_API_KEY", None) if hasattr(st, "secrets") else None
+    if not api_key:
+        api_key = os.environ.get("OPENAI_API_KEY")
+    return api_key
 
 def build_system_prompt_code_executor():
     return (
@@ -64,7 +71,7 @@ Regole se l'utente ti chiede di generare report o commenti:
 CAPACITÀ DI ANALISI DISPONIBILI:
 Puoi eseguire queste analisi sui dati:
 - Statistiche descrittive per colonne numeriche
-- Analisi di frequenza per variabili categoriche
+- Analisi di frequenza per handle_chat_input  categoriche
 - Identificazione di valori mancanti e outlier
 - Correlazioni tra variabili
 - Raggruppamenti e aggregazioni
@@ -82,7 +89,8 @@ IMPORTANTE: Quando l'utente chiede analisi specifiche, puoi fornire risultati pr
         api_messages.append({"role": msg["role"], "content": msg["content"]})
     
     try:
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=get_api_key())
+        response = client.chat.completions.create(
 			model=model,
 			messages=api_messages,
 			functions=[{
@@ -103,8 +111,8 @@ IMPORTANTE: Quando l'utente chiede analisi specifiche, puoi fornire risultati pr
 
         msg = response.choices[0].message
 		# se l'LLM ha invocato la funzione:
-        if msg.get("function_call"):
-            args = json.loads(msg["function_call"]["arguments"])
+        if msg.function_call:
+            args = json.loads(msg.function_call.arguments)
             code = args.get("code", "")
             result = execute_code(code, dataframe)
 			# poi formattiamo una seconda chiamata per la risposta umana
@@ -117,122 +125,65 @@ IMPORTANTE: Quando l'utente chiede analisi specifiche, puoi fornire risultati pr
 			)
             return followup.choices[0].message.content
         else:
-            return msg.get("content", "")
+            return msg.content
         
     except Exception as e:
         return f"Errore nella chiamata a OpenAI: {str(e)}"
+    
 
-def _contains_data_query(text: str) -> bool:
-    """Verifica se il testo contiene richieste di analisi dati"""
-    data_keywords = [
-        'correlazione', 'media', 'mediana', 'deviazione', 'distribuzione',
-        'frequenza', 'somma', 'massimo', 'minimo', 'raggruppa', 'filtra',
-        'ordina', 'top', 'bottom', 'conta', 'percentuale', 'statistic', 'analisi', 'trend',
-        'outlier', 'varianza', 'quantile', 'istogramma', 'calcola', 'aggiungi'
-    ]
-    
-    text_lower = text.lower()
-    return any(keyword in text_lower for keyword in data_keywords)
 
-def _execute_data_analysis(query: str, df: pd.DataFrame) -> Optional[str]:
-    """Esegue analisi automatiche basate sulla query dell'utente"""
-    try:
-        analyzer = DataAnalyzer(df)
-        query_lower = query.lower()
-        results = []
-        
-        # Analisi di correlazione
-        if 'correlazione' in query_lower or 'correlazioni' in query_lower:
-            numeric_cols = df.select_dtypes(include=['number']).columns
-            if len(numeric_cols) >= 2:
-                corr_matrix = df[numeric_cols].corr()
-                # Trova le correlazioni più significative
-                high_corr = []
-                for i in range(len(numeric_cols)):
-                    for j in range(i+1, len(numeric_cols)):
-                        corr_val = corr_matrix.iloc[i, j]
-                        if abs(corr_val) > 0.5:
-                            high_corr.append(f"{numeric_cols[i]} ↔ {numeric_cols[j]}: {corr_val:.3f}")
-                
-                if high_corr:
-                    results.append("CORRELAZIONI SIGNIFICATIVE:\n" + "\n".join(high_corr))
-        
-        # Statistiche descrittive per colonne menzionate
-        mentioned_cols = [col for col in df.columns if col.lower() in query_lower]
-        for col in mentioned_cols:
-            if df[col].dtype in ['int64', 'float64']:
-                stats = df[col].describe()
-                results.append(f"STATISTICHE PER {col}:\n{stats.to_string()}")
-            else:
-                value_counts = df[col].value_counts().head(10)
-                results.append(f"FREQUENZE PER {col}:\n{value_counts.to_string()}")
-        
-        # Analisi generale se non vengono trovate colonne specifiche
-        if not mentioned_cols and not results:
-            # Fornisci un summary generale
-            summary = analyzer.get_comprehensive_summary()
-            insights = summary.get('insights', [])
-            if insights:
-                results.append("INSIGHTS GENERALI:\n" + "\n".join(f"• {insight}" for insight in insights))
-        
-        return "\n\n".join(results) if results else None
-        
-    except Exception as e:
-        return f"Errore nell'analisi automatica: {str(e)}"
 
-# Manteniamo la funzione originale per backward compatibility
-def ask_openai(messages_history, model, temperature=0.7, top_p=1.0):
-    """Funzione originale mantenuta per compatibilità"""
-    return ask_openai_with_data(messages_history, model, None, temperature, top_p)
+def ask_openai_analysis(history: List[Dict], model: str, df: pd.DataFrame, temperature: float, top_p: float) -> str:
+    """
+    Risponde alle domande sull’analisi dati usando function-calling Python
+    solo se df è presente.
+    """
+    system = build_system_prompt_code_executor()
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role":"system","content":system}] + history,
+        functions=[{
+            "name":"execute_code",
+            "description":"Esegue codice su df",
+            "parameters":{"type":"object","properties":{"code":{"type":"string"}},"required":["code"]}
+        }],
+        function_call="auto",
+        temperature=temperature,
+        top_p=top_p
+    )
+    msg = response.choices[0].message
+    if msg.function_call:
+        args = json.loads(msg.function_call.arguments)
+        result = execute_code(args["code"], df)
+        followup = client.chat.completions.create(
+            model=model,
+            messages=[
+                *response.usage,  # oppure ricomporre i messaggi
+                {"role":"assistant","function_call":msg.function_call},
+                {"role":"function","name":"execute_code","content":json.dumps(result)}
+            ]
+        )
+        return followup.choices[0].message.content
+    else:
+        return msg.content
 
-# Nuove funzioni utility per query specifiche sui dati
-def execute_specific_query(df: pd.DataFrame, query_type: str, **params) -> str:
-    """Esegue query specifiche e restituisce risultati formattati"""
-    try:
-        analyzer = DataAnalyzer(df)
-        result = analyzer.query_data(query_type, **params)
-        
-        if isinstance(result, pd.DataFrame):
-            return f"RISULTATI QUERY ({query_type}):\n{result.to_string()}"
-        elif isinstance(result, pd.Series):
-            return f"RISULTATI QUERY ({query_type}):\n{result.to_string()}"
-        else:
-            return f"RISULTATO QUERY ({query_type}): {result}"
-            
-    except Exception as e:
-        return f"Errore nell'esecuzione della query: {str(e)}"
-
-def get_data_suggestions(df: pd.DataFrame) -> List[str]:
-    """Genera suggerimenti per possibili analisi sui dati"""
-    analyzer = DataAnalyzer(df)
-    summary = analyzer.get_comprehensive_summary()
-    
-    suggestions = []
-    
-    # Suggerimenti basati sui tipi di colonne
-    numeric_cols = [col for col, info in summary['column_analysis'].items() 
-                   if 'statistics' in info]
-    categorical_cols = [col for col, info in summary['column_analysis'].items() 
-                       if 'top_values' in info]
-    
-    if len(numeric_cols) >= 2:
-        suggestions.append("🔗 Analizza le correlazioni tra variabili numeriche")
-        suggestions.append("📊 Confronta le distribuzioni delle variabili numeriche")
-    
-    if categorical_cols:
-        suggestions.append("📈 Esamina la frequenza delle categorie principali")
-        if numeric_cols:
-            suggestions.append("🎯 Analizza le medie per categoria")
-    
-    # Suggerimenti basati sulla qualità dei dati
-    if summary['data_quality']['missing_cells'] > 0:
-        suggestions.append("🔍 Investiga i pattern dei valori mancanti")
-    
-    if summary['data_quality']['duplicate_rows'] > 0:
-        suggestions.append("🔄 Esamina le righe duplicate")
-    
-    # Suggerimenti basati sulle relazioni
-    if summary['relationships']['high_correlations']:
-        suggestions.append("⚡ Approfondisci le correlazioni significative trovate")
-    
-    return suggestions[:5]  # Limitiamo a 5 suggerimenti
+def ask_openai_report(history: List[Dict], model: str, df_report: pd.DataFrame, temperature: float, top_p: float) -> str:
+    """
+    Risponde alle domande di report includendo il contesto completo di df_report.
+    """
+    # Genero un prompt che include create_data_context(df_report)
+    data_ctx = create_data_context(df_report)
+    system = (
+      "Sei Storylaizer, esperto nella generazione di report statistici dettagliati.\n"
+      f"DATASET REPORT CONTEXT:\n{data_ctx}\n\n"
+      "Ora l’utente può chiedere di creare report o commenti sul dataset intero."
+    )
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role":"system","content":system}] + history,
+        temperature=temperature,
+        top_p=top_p
+    )
+    return response.choices[0].message.content
