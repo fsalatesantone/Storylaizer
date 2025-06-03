@@ -1,6 +1,7 @@
 # Nascondi file sensibili
 .env
-.streamlit/secrets.toml
+.streamlit/
+!/.streamlit/secrets.toml
 
 # Cache e file temporanei
 __pycache__/

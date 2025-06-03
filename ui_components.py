@@ -127,7 +127,8 @@ def display_chat_history():
 def render_data_preview(df):
     #with st.expander("📈 Esplora i dati", expanded=True):
     # Anteprima
-    st.markdown("<div class='mode-title'>Anteprima</div>", unsafe_allow_html=True)
+    st.markdown("<div class='mode-title'>Tabella Dati</div>", unsafe_allow_html=True)
+    st.markdown(f"""**{df.shape[0]}** righe, **{df.shape[1]}** colonne""", unsafe_allow_html=True)
     st.dataframe(df)
 
     # Statistiche principali

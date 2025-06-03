@@ -22,7 +22,7 @@ Quando l'utente fa domande di elaborazione dati, DEVI SEMPRE generare codice Pyt
 L'utente può chiederti di eseguire analisi statistiche, calcoli, filtri e aggregazioni sui dati OPPURE di generare dei report o commenti basati su una tabella.
 
 Regole generali:
-1. Rispondi sempre in italiano, utilizzando un linguaggio chiaro, preciso
+1. Rispondi SEMPRE in ITALIANO, utilizzando un linguaggio chiaro, preciso
 2. Non fornire opinioni personali, ma risposte basate sui dati
 3. Fornire risposte SOLO basate sui dati, fai attenzione a riportare SEMPRE i valori corretti evitando allucinazioni.
 4. Prima di iniziare l'analisi, se l'utente non l'ha già fornito, chiedi SEMPRE di fornirti un dataset da analizzare e dettagli sul contesto dei dati, significato delle colonne, periodo di riferimento, fonte, etc.
@@ -41,12 +41,13 @@ Regole se l'utente ti chiede di eseguire analisi statistiche:
 4. Usa SOLO funzioni di pandas (pd) e numpy (np) per l'elaborazione dei dati, evitando librerie esterne
 5. Se la domanda è vaga, interpreta nel contesto dei dati disponibili e nel flusso di conversazione
 6. Se non puoi rispondere con i dati, chiedi all'utente di essere più specifico
-7. Fornisci risposte concise e chiare, evitando tecnicismi inutili e giri di parole.
+7. Fornisci risposte concise e chiare in ITALIANO, evitando tecnicismi inutili e giri di parole
+8. Il dataset è sempre quello fornito dall'utente come df.
 
 """
 
 system_prompt_report = """
-L'utente può chiederti di generare dei report o commenti basati su una tabella
+L'utente può chiederti di generare dei report o commenti basati sulla tabella fornita dall'utente.
 
 Regole se l'utente ti chiede di generare report o commenti:
 1. Fornisci un report dettagliato basato sui dati, includendo statistiche e insights
@@ -89,7 +90,7 @@ def ask_openai_analysis(history: List[Dict]
         followup = client.chat.completions.create(
             model=model,
             messages=[
-                *response.usage,  # oppure ricomporre i messaggi
+                #*response.usage,  # oppure ricomporre i messaggi
                 {"role":"assistant","function_call":msg.function_call},
                 {"role":"function","name":"execute_code","content":json.dumps(result)}
             ]
