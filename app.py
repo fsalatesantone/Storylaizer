@@ -32,7 +32,7 @@ def handle_chat_input(key):
             loading_placeholder = st.empty()
             loading_placeholder.markdown("🧠 *Storylaizer sta scrivendo...*")
             # Se siamo nel tabl "file" e la domanda contiene analisi dati, facciamo function-calling 
-            if st.session_state.get("dataframe") is not None and st.session_state.active_tab == "file":
+            if st.session_state.get("dataframe") is not None: #and st.session_state.active_tab == "file":
                 risposta = ask_openai_analysis(history = st.session_state.chat_history
                                                , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
                                                , df = st.session_state.get("dataframe", None)
@@ -40,7 +40,8 @@ def handle_chat_input(key):
                                                , top_p = st.session_state.get("top_p", 1.0)
                 )
             # Altrimenti, se siamo nella tab "report" o "chat", chiamiamo l'API per il report
-            elif st.session_state.active_tab == "report" or st.session_stat.e.active_tab == "chat":
+            #elif st.session_state.active_tab == "report" or st.session_stat.e.active_tab == "chat":
+            else:
                 risposta = ask_openai_report(history = st.session_state.chat_history
                                              , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
                                              , df = st.session_state.get("dataframe_report", None)
@@ -66,29 +67,11 @@ def main():
     init_session_state()
     render_header()
 
-    # Tieni traccia della tab precedente per gestire il reset quando si cambia tab
-    if "previous_tab" not in st.session_state:
-        st.session_state.previous_tab = "file"  # Valore iniziale
-
-    # Inizializza lo stato della tab attiva se non esiste
-    if "active_tab" not in st.session_state:
-        st.session_state.active_tab = "file"  # Default alla tab dei file
-
     # Utilizzo st.tabs invece di st.radio
     tab1, tab2, tab3 = st.tabs(["📊 Analizza un file", "📋 Genera un report", "💬 Parla con l'assistente AI"])
     
     # Contenuto della prima tab (Analizza file)
     with tab1:
-        # Se abbiamo cambiato tab dalla chat alla tab file, resettiamo la chat
-        if ((st.session_state.previous_tab == "chat" and st.session_state.active_tab == "file")
-            or (st.session_state.previous_tab == "report" and st.session_state.active_tab == "file")):
-            if "conversation_started" in st.session_state and st.session_state.conversation_started:
-                reset_conversation()
-                st.session_state.conversation_started = False
-        
-        # Aggiorna lo stato della tab
-        st.session_state.active_tab = "file"
-        st.session_state.previous_tab = "file"
         
         uploader_key1 = f"uploader1_{st.session_state.session_id}"
         with st.expander("📂 Carica il file da analizzare", expanded=True):
@@ -133,16 +116,7 @@ def main():
 
 
     with tab2:
-        # Se abbiamo cambiato tab dalla chat alla tab file, resettiamo la chat
-        if ((st.session_state.previous_tab == "chat" and st.session_state.active_tab == "file")
-            or (st.session_state.previous_tab == "report" and st.session_state.active_tab == "file")):
-            if "conversation_started" in st.session_state and st.session_state.conversation_started:
-                reset_conversation()
-                st.session_state.conversation_started = False
-        
-        # Aggiorna lo stato della tab
-        st.session_state.active_tab = "report"
-        st.session_state.previous_tab = "report"
+
         n_righe_file = 0
         
         uploader_key2 = f"uploader2_{st.session_state.session_id}"
@@ -192,19 +166,7 @@ def main():
 
     
     # Contenuto della terza tab (Chat)
-    with tab3:
-        # Se abbiamo cambiato tab dalla tab file alla chat, aggiorniamo lo stato
-        if ((st.session_state.previous_tab == "chat" and st.session_state.active_tab == "file")
-            or (st.session_state.previous_tab == "report" and st.session_state.active_tab == "file")):
-            if "conversation_started" in st.session_state and st.session_state.conversation_started:
-                reset_conversation()
-                st.session_state.conversation_started = False
-        
-        # Aggiorna lo stato della tab
-        st.session_state.active_tab = "chat"
-        st.session_state.previous_tab = "chat"
-        
-        # EXPANDER - Opzioni con chiave specifica per la tab
+    with tab3: 
         render_conversation_options(tab_key="chat_tab")
         st.markdown(f"""<div class='mode-title'>Chiedi all'assistente</div>
                     <div class='mode-subtitle'>Fornisci all'assistente dei dati sui quali generare un report, incollandoli direttamente nella chat.<br>

@@ -16,19 +16,12 @@ def reset_conversation():
     # Nuovo ID sessione per forzare ricaricamento
     st.session_state.session_id = str(time.time())
     
-    # Salva la tab corrente prima del reset
-    current_tab = st.session_state.get("active_tab", "file")
-    
     # Reset variabili principali
     keys_to_reset = ["chat_history", "file_loaded1", "uploaded_file1", "file_loaded2", "uploaded_file2"
                      , "dataframe", "dataframe_report", "data_metadata", "data_errors"]
     for key in keys_to_reset:
         if key in st.session_state:
             del st.session_state[key]
-    
-    # Ripristina la tab corrente
-    st.session_state.active_tab = current_tab
-    st.session_state.default_tab = current_tab
             
 def init_session_state():
     if "chat_history" not in st.session_state:
@@ -43,8 +36,6 @@ def init_session_state():
         st.session_state.file_loaded2 = False
     if "uploaded_file2" not in st.session_state:
         st.session_state.uploaded_file2 = None
-    if "active_tab" not in st.session_state:
-        st.session_state.active_tab = "file"  # Default alla tab dei file
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(time.time())
 
