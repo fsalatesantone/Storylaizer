@@ -14,7 +14,7 @@ max_righe_per_report = 250 # Numero massimo di righe per generare un report
 if not os.environ.get("STREAMLIT_SHARING"):
     load_dotenv()
 
-def handle_chat_input(key, chat_history, conversation_started):
+def handle_chat_input(key, chat_history):
     """Gestisce l'input della chat con una chiave univoca"""
     pending_key = f"pending_user_message{key}"
     if pending_key not in st.session_state:
@@ -26,7 +26,7 @@ def handle_chat_input(key, chat_history, conversation_started):
         
         render_user_message(user_input)
         chat_history.append({"role": "user", "content": user_input})
-        conversation_started = True
+        st.session_state[f"conversation_started{key}"] = True
         
         with st.chat_message("assistant"):
             loading_placeholder = st.empty()
@@ -117,7 +117,7 @@ def main():
 
             # Visualizza la cronologia, poi l'input in basso
             display_chat_history(chat_history=st.session_state.chat_history1)
-            handle_chat_input(key="1", chat_history=st.session_state.chat_history1, conversation_started=st.session_state.conversation_started1)
+            handle_chat_input(key="1", chat_history=st.session_state.chat_history1)
 
     with tab2:
         st.markdown(f"""<div class='mode-title'>Genera un report</div>
@@ -164,7 +164,7 @@ def main():
 
             # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
             display_chat_history(chat_history=st.session_state.chat_history2)
-            handle_chat_input(key="2", chat_history=st.session_state.chat_history2, conversation_started=st.session_state.conversation_started2)
+            handle_chat_input(key="2", chat_history=st.session_state.chat_history2)
             
 
     
@@ -185,7 +185,7 @@ def main():
         
         # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
         display_chat_history(chat_history=st.session_state.chat_history3)
-        handle_chat_input(key="3", chat_history=st.session_state.chat_history3, conversation_started=st.session_state.conversation_started3)
+        handle_chat_input(key="3", chat_history=st.session_state.chat_history3)
 
 if __name__ == "__main__":
     main()
