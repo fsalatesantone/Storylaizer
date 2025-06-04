@@ -26,6 +26,7 @@ Regole generali:
 2. Non fornire opinioni personali, ma risposte basate sui dati
 3. Fornire risposte SOLO basate sui dati, fai attenzione a riportare SEMPRE i valori corretti evitando allucinazioni.
 4. Prima di iniziare l'analisi, se l'utente non l'ha già fornito, chiedi SEMPRE di fornirti un dataset da analizzare e dettagli sul contesto dei dati, significato delle colonne, periodo di riferimento, fonte, etc.
+5. Ogni volta che vuoi mostrare un simbolo matematico all’interno di una frase (es. \\sigma), usa SEMPRE $…$
 
 """
 
@@ -75,7 +76,7 @@ def ask_openai_analysis(history: List[Dict]
         model=st.session_state.selected_model,
         messages=[{"role":"system"
                    ,"content":system_prompt_generale + system_prompt_analisi_df + data_context}]
-                + st.session_state.chat_history,
+                + history,
         functions=[{"name":"execute_code", "description":"Esegue codice su df",
                     "parameters":{"type":"object","properties":{"code":{"type":"string"}},"required":["code"]}}],
         function_call="auto",
@@ -108,7 +109,7 @@ def ask_openai_report(history: List[Dict]
     Risponde alle domande di report includendo il contesto completo di df.
     """
     # Genero un prompt che include create_data_context(df_report)
-    if df.empty or df is None:
+    if df is None or df.empty:
         system_prompt_dati = f"""Chiedi all'utente di fornire un dataset da analizzare."""
     else:
         system_prompt_dati = f"""

@@ -14,50 +14,57 @@ max_righe_per_report = 250 # Numero massimo di righe per generare un report
 if not os.environ.get("STREAMLIT_SHARING"):
     load_dotenv()
 
-def handle_chat_input(key):
+def handle_chat_input(key, chat_history, conversation_started):
     """Gestisce l'input della chat con una chiave univoca"""
-    # Se c'è un messaggio pendente (dopo un rerun), gestiscilo
-    if "pending_user_message" not in st.session_state:
-        st.session_state.pending_user_message = None
+    pending_key = f"pending_user_message{key}"
+    if pending_key not in st.session_state:
+        st.session_state[pending_key] = None
     
-    if st.session_state.pending_user_message:
-        user_input = st.session_state.pending_user_message
-        st.session_state.pending_user_message = None
+    if st.session_state[pending_key]:
+        user_input = st.session_state[pending_key]
+        st.session_state[pending_key] = None
         
         render_user_message(user_input)
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        st.session_state.conversation_started = True
+        chat_history.append({"role": "user", "content": user_input})
+        conversation_started = True
         
         with st.chat_message("assistant"):
             loading_placeholder = st.empty()
             loading_placeholder.markdown("🧠 *Storylaizer sta scrivendo...*")
-            # Se siamo nel tabl "file" e la domanda contiene analisi dati, facciamo function-calling 
-            if st.session_state.get("dataframe") is not None: #and st.session_state.active_tab == "file":
-                risposta = ask_openai_analysis(history = st.session_state.chat_history
-                                               , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
-                                               , df = st.session_state.get("dataframe", None)
-                                               , temperature = st.session_state.get("temperature", 0.7)
-                                               , top_p = st.session_state.get("top_p", 1.0)
-                )
-            # Altrimenti, se siamo nella tab "report" o "chat", chiamiamo l'API per il report
-            #elif st.session_state.active_tab == "report" or st.session_stat.e.active_tab == "chat":
-            else:
-                risposta = ask_openai_report(history = st.session_state.chat_history
+
+            # Scelgo il DataFrame e la funzione di OpenAI in base alla tab (key)
+            if key == "1": # Se siamo nel tab 1 e la domanda contiene analisi dati, facciamo function-calling 
+                risposta = ask_openai_analysis(history = chat_history
+                                            , model = st.session_state.get("selected_model", "gpt-4.1-nano")
+                                            , df = st.session_state.get("dataframe", None)
+                                            , temperature = st.session_state.get("temperature", 0.7)
+                                            , top_p = st.session_state.get("top_p", 1.0)
+                                            )
+            elif key == "2": # Nel tab 2 non deve fare function-calling, ma solo report
+                risposta = ask_openai_report(history = chat_history
                                              , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
                                              , df = st.session_state.get("dataframe_report", None)
                                              , temperature = st.session_state.get("temperature", 0.7)
                                              , top_p = st.session_state.get("top_p", 1.0)
-                )
+                                            )
+            else:  # key == "3" # Nel tab 3 non deve fare function-calling, ma solo report (ma senza dati importati da excel)
+                risposta = ask_openai_report(history = chat_history
+                                             , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
+                                             , df = None
+                                             , temperature = st.session_state.get("temperature", 0.7)
+                                             , top_p = st.session_state.get("top_p", 1.0)
+                                            )
             loading_placeholder.empty()
             render_response(risposta)
-            st.session_state.chat_history.append({"role": "assistant", "content": risposta})
+            chat_history.append({"role": "assistant", "content": risposta})
         
         st.rerun()
     
     # Altrimenti mostra il campo input con chiave univoca
     user_input = st.chat_input("Scrivi qualcosa...", key=key)
     if user_input:
-        st.session_state.pending_user_message = user_input
+        #st.session_state.pending_user_message = user_input
+        st.session_state[pending_key] = user_input
         st.rerun()
     
 
@@ -72,6 +79,18 @@ def main():
     
     # Contenuto della prima tab (Analizza file)
     with tab1:
+        st.markdown("""<div class='mode-title'>Analizza un file</div>
+                    <div class='mode-subtitle'>L'assistente è in grado di eseguire <strong>analisi dati</strong>, <strong>calcolo di statistiche</strong>
+                    , <strong>filtri</strong> e <strong>aggregazioni</strong> sui dati caricati all'interno di un file <strong>Excel</strong>: riesce  
+                    ad interpretare le richieste in <i>linguaggio naturale</i> convertendole in istruzioni per l'elaborazione a sistema.<br><br>
+                    Prova a chiedere ad esempio di calcolare la <i>media</i> di una colonna o di <i>filtrare</i> le righe in base ad una condizione, facendo attenzione però 
+                    a riferirti all'esatto nome della colonna (in caso di errori di battitura nel nome del campo, l'assistente potrebbe non riuscire a rispondere correttamente).
+                    Se dovessi ricevere un errore, prova a riformulare la domanda o a fornire più dettagli sui dati caricati.
+                    <br><br>
+                    Se invece sei interessato a generare un <strong>report</strong> a partire da un <i>file Excel</i>, passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
+                    Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
+                    </div><br>"""
+                    , unsafe_allow_html=True)
         
         uploader_key1 = f"uploader1_{st.session_state.session_id}"
         with st.expander("📂 Carica il file da analizzare", expanded=True):
@@ -83,7 +102,6 @@ def main():
                 selected_sheet = st.selectbox("📑 Seleziona il foglio", options=sheet_names, index=0, key=f"sheet_sel1_{st.session_state.session_id}")
                 df = pd.read_excel(uploaded_file1, sheet_name=selected_sheet)
                 st.session_state.dataframe = df
-
                 st.session_state.file_loaded1 = True
                 st.success(f"✅ Hai caricato: {uploaded_file1.name} (sheet: {selected_sheet})")
                 
@@ -94,28 +112,25 @@ def main():
         if st.session_state.file_loaded1:
             
             # Opzioni di conversazione e download
-            render_conversation_options(tab_key="file_tab")
-            render_download_conversation(tab_key="file_tab")
-            
-            st.markdown("""<div class='mode-title'>Chiedi all'assistente</div>
-                        <div class='mode-subtitle'>L'assistente è in grado di eseguire <strong>analisi dati</strong>, <strong>calcolo di statistiche</strong>
-                        , <strong>filtri</strong> e <strong>aggregazioni</strong> sui dati.<br>
-                        Riesce ad interpretare le richieste in <i>linguaggio naturale</i> convertendole in istruzioni di sistema.<br><br>
-                        Prova a chiedere ad esempio di calcolare la <i>media</i> di una colonna o di <i>filtrare</i> le righe in base ad una condizione, facendo attenzione però 
-                        a riferirti all'esatto nome della colonna (in caso di errori di battitura nel nome del campo, l'assistente potrebbe non riuscire a rispondere correttamente).
-                        Se dovessi ricevere un errore, prova a riformulare la domanda o a fornire più dettagli sui dati caricati.
-                        <br><br>
-                        Se invece sei interessato a generare un <strong>report</strong> a partire da un <i>file Excel</i>, passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
-                        Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
-                        </div><br>"""
-                        , unsafe_allow_html=True)
+            render_conversation_options(tab_key="file_tab", conversation_started=st.session_state.conversation_started1)
+            render_download_conversation(tab_key="file_tab", chat_history=st.session_state.chat_history1, conversation_started=st.session_state.conversation_started1)
 
-            # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
-            display_chat_history()
-            handle_chat_input(key="chat_input_file_tab")
-
+            # Visualizza la cronologia, poi l'input in basso
+            display_chat_history(chat_history=st.session_state.chat_history1)
+            handle_chat_input(key="1", chat_history=st.session_state.chat_history1, conversation_started=st.session_state.conversation_started1)
 
     with tab2:
+        st.markdown(f"""<div class='mode-title'>Genera un report</div>
+                        <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> basati sui dati caricati a partire da un file <i>Excel</i>.<br><br>
+                    Fornisci una <i>descrizione</i> dei dati caricati specificando dettagli sul significato delle colonne, 
+                        il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
+                        Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br>
+                        Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.
+                        <br><br>
+                        Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
+                        Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o effettuare dei <strong>calcoli</strong>, passa alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
+                        </div><br>"""
+                        , unsafe_allow_html=True)
 
         n_righe_file = 0
         
@@ -129,7 +144,6 @@ def main():
                 selected_sheet = st.selectbox("📑 Seleziona il foglio", options=sheet_names, index=0, key=f"sheet_sel2_{st.session_state.session_id}")
                 df = pd.read_excel(uploaded_file2, sheet_name=selected_sheet)
                 st.session_state.dataframe_report = df
-
                 st.session_state.file_loaded2 = True
                 st.success(f"✅ Hai caricato: {uploaded_file2.name} (sheet: {selected_sheet})")
                 
@@ -145,43 +159,33 @@ def main():
         if st.session_state.file_loaded2 and n_righe_file <= max_righe_per_report:
             
             # Opzioni di conversazione e download
-            render_conversation_options(tab_key="report_tab")
-            render_download_conversation(tab_key="report_tab")
-            
-            st.markdown(f"""<div class='mode-title'>Chiedi all'assistente</div>
-                        <div class='mode-subtitle'>Fornisci una <i>descrizione</i> dei dati caricati fornendo dettagli sul significato delle colonne, 
-                        il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                        Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"genera un report di 500 caratteri, uno per ciascuna regione, ..."</i>).<br>
-                        Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.
-                        <br><br>
-                        Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
-                        Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o effettuare dei <strong>calcoli</strong>, passa alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
-                        </div><br>"""
-                        , unsafe_allow_html=True)
+            render_conversation_options(tab_key="report_tab", conversation_started=st.session_state.conversation_started2)
+            render_download_conversation(tab_key="report_tab", chat_history=st.session_state.chat_history2, conversation_started=st.session_state.conversation_started2)
 
             # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
-            display_chat_history()
-            handle_chat_input(key="chat_report_tab")
+            display_chat_history(chat_history=st.session_state.chat_history2)
+            handle_chat_input(key="2", chat_history=st.session_state.chat_history2, conversation_started=st.session_state.conversation_started2)
             
 
     
     # Contenuto della terza tab (Chat)
     with tab3: 
-        render_conversation_options(tab_key="chat_tab")
-        st.markdown(f"""<div class='mode-title'>Chiedi all'assistente</div>
+        st.markdown(f"""<div class='mode-title'>Parla con l'assistente AI</div>
                     <div class='mode-subtitle'>Fornisci all'assistente dei dati sui quali generare un report, incollandoli direttamente nella chat.<br>
                     Riporta anche una <i>descrizione</i> dei dati caricati fornendo dettagli sul significato delle colonne, 
                     il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                    Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"genera un report di 500 caratteri, uno per ciascuna regione, ..."</i>).<br>
+                    Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br>
                     Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
                     Puoi anche decidere di generare un <strong>report</strong> a partire da un <i>file Excel</i>: passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
                     Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o a calcolare <strong>metriche</strong> specifiche, vai alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
                     </div><br>"""
                     , unsafe_allow_html=True)
+        render_conversation_options(tab_key="chat_tab", conversation_started=st.session_state.conversation_started3)
+        render_download_conversation(tab_key="chat_tab", chat_history=st.session_state.chat_history3, conversation_started=st.session_state.conversation_started3)
         
         # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
-        display_chat_history()
-        handle_chat_input(key="chat_input_chat_tab")
+        display_chat_history(chat_history=st.session_state.chat_history3)
+        handle_chat_input(key="3", chat_history=st.session_state.chat_history3, conversation_started=st.session_state.conversation_started3)
 
 if __name__ == "__main__":
     main()

@@ -16,18 +16,38 @@ def render_user_message(message):
     )
 
 def render_response(content):
-    latex_blocks = re.findall(r"\\boxed\{.*?\}", content)
+    pattern = r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\[.*?\])"
+    parts = re.split(pattern, content, flags=re.DOTALL)
 
-    if latex_blocks:
-        parts = re.split(r"(\\boxed\{.*?\})", content)
-        for part in parts:
-            if part.startswith("\\boxed"):
-                st.latex(part)
-            else:
-                # Usa unsafe_allow_html=True per permettere la formattazione markdown
-                st.markdown(part, unsafe_allow_html=True)
-    else:
-        st.markdown(content, unsafe_allow_html=True)
+    for part in parts:
+        # 1) formula LaTeX $$ … $$
+        if part.startswith("$$") and part.endswith("$$"):
+            formula = part.strip("$$")
+            # Se ci fosse %, lo escapiamo
+            formula = formula.replace("%", r"\%")
+            st.latex(formula)
+
+        # 2) formula LaTeX in-line $ … $
+        elif part.startswith("$") and part.endswith("$"):
+            formula = part.strip("$")
+            formula = formula.replace("%", r"\%")
+            st.markdown(f"${formula}$", unsafe_allow_html=True)
+
+        # 3) formula LaTeX tra \[ … \] (display mode)
+        elif part.startswith("\\[") and part.endswith("\\]"):
+            formula = part[2:-2]
+            formula = formula.replace("%", r"\%")
+            st.latex(formula)
+
+        # 4) formula tra LaTeX [ … ]
+        elif part.startswith("[") and part.endswith("]"):
+            # Estraggo il contenuto interno e scapo eventuali %
+            inner = part[1:-1].strip()
+            inner = inner.replace("%", r"\%")
+            st.latex(inner)
+
+        else:
+            st.markdown(part, unsafe_allow_html=True)
 
 def load_css():
     st.markdown("""
@@ -111,9 +131,9 @@ def render_header():
         """, unsafe_allow_html=True)
 
 
-def display_chat_history():
+def display_chat_history(chat_history):
     """Visualizza la cronologia delle chat"""
-    for msg in st.session_state.chat_history:
+    for msg in chat_history:
         if msg["role"] == "user":
             render_user_message(msg["content"])
         else:
@@ -153,9 +173,9 @@ def render_data_preview(df):
     st.dataframe(stats)
     # ——— FINE ANTEPRIMA E STATISTICHE ———
 
-def render_download_conversation(tab_key):
+def render_download_conversation(tab_key, chat_history, conversation_started):
     with st.expander("💾 Download conversazione", expanded=False):
-        disabilita = not st.session_state.get("conversation_started", False)
+        disabilita = not conversation_started #st.session_state.get("conversation_started", False)
         
         # Aggiungi un prefisso alla chiave in base alla tab
         #reset_btn_key = f"reset_button_{tab_key}"
@@ -171,7 +191,7 @@ def render_download_conversation(tab_key):
         )
         formato = formati[formato_label]
         
-        export_result = export_chat(formato.lower()) if not disabilita else None
+        export_result = export_chat(formato.lower(), chat_history) if not disabilita else None
         
         st.download_button(
             label=f"📥 Download conversazione [{formato}]",
@@ -183,10 +203,10 @@ def render_download_conversation(tab_key):
         )
 
 
-def render_conversation_options(tab_key):
+def render_conversation_options(tab_key, conversation_started):
     """Renderizza le opzioni di conversazione nell'expander"""
     with st.expander("⚙️ Opzioni conversazione", expanded=False):
-        disabilita = not st.session_state.get("conversation_started", False)
+        disabilita = not conversation_started #st.session_state.get("conversation_started", False)
         
         # # Aggiungi un prefisso alla chiave in base alla tab
         reset_btn_key = f"reset_button_{tab_key}"
@@ -197,26 +217,6 @@ def render_conversation_options(tab_key):
         top_p_key = f"top_p_slider_{tab_key}"
         
         st.button("🧹 Reset conversazione", on_click=reset_conversation, disabled=disabilita, key=reset_btn_key)
-        
-        # formati = {"📊 XLSX": "XLSX", "📝 DOCX": "DOCX", "📄 TXT": "TXT"}
-        # formato_label = st.selectbox(
-        #     "📂 Seleziona formato di esportazione:",
-        #     list(formati.keys()),
-        #     key=format_key,
-        #     disabled=disabilita
-        # )
-        # formato = formati[formato_label]
-        
-        # export_result = export_chat(formato.lower()) if not disabilita else None
-        
-        # st.download_button(
-        #     label=f"📥 Download conversazione [{formato}]",
-        #     data=export_result[0] if export_result else b"",
-        #     file_name=export_result[2] if export_result else "",
-        #     mime=export_result[1] if export_result else "",
-        #     disabled=disabilita,
-        #     key=download_key
-        # )
         
         # Scelta modello
         modelli = {

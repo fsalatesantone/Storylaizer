@@ -17,15 +17,36 @@ def reset_conversation():
     st.session_state.session_id = str(time.time())
     
     # Reset variabili principali
-    keys_to_reset = ["chat_history", "file_loaded1", "uploaded_file1", "file_loaded2", "uploaded_file2"
+    keys_to_reset = ["chat_history1", "chat_history2", "chat_history3"
+                     , "file_loaded1", "uploaded_file1"
+                     , "file_loaded2", "uploaded_file2"
                      , "dataframe", "dataframe_report", "data_metadata", "data_errors"]
     for key in keys_to_reset:
         if key in st.session_state:
             del st.session_state[key]
             
 def init_session_state():
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    if "chat_history1" not in st.session_state:
+        st.session_state.chat_history1 = []
+    if "chat_history2" not in st.session_state:
+        st.session_state.chat_history2 = []
+    if "chat_history3" not in st.session_state:
+        st.session_state.chat_history3 = []
+
+    if "conversation_started1" not in st.session_state:
+        st.session_state.conversation_started1 = False
+    if "conversation_started2" not in st.session_state:
+        st.session_state.conversation_started2 = False
+    if "conversation_started3" not in st.session_state:
+        st.session_state.conversation_started3 = False
+
+    if "pending_user_message1" not in st.session_state:
+        st.session_state.pending_user_message1 = None
+    if "pending_user_message2" not in st.session_state:
+        st.session_state.pending_user_message2 = None
+    if "pending_user_message3" not in st.session_state:
+        st.session_state.pending_user_message3 = None
+
     if "selected_mode" not in st.session_state:
         st.session_state.selected_mode = None
     if "file_loaded1" not in st.session_state:
@@ -40,8 +61,9 @@ def init_session_state():
         st.session_state.session_id = str(time.time())
 
 # Esportazione chat in vari formati
-def export_chat(format_type):
-    if not st.session_state.chat_history:
+def export_chat(format_type, chat_history):
+    #if not st.session_state.chat_history:
+    if chat_history == []:
         st.warning("Non ci sono messaggi da esportare.")
         return None
 
@@ -50,7 +72,7 @@ def export_chat(format_type):
         tables = []
         tbl_idx = 0
 
-        for msg in st.session_state.chat_history:
+        for msg in chat_history:
             role = "Utente" if msg["role"] == "user" else "Assistente"
             content = msg["content"] or ""
             lines = content.splitlines()
@@ -114,7 +136,7 @@ def export_chat(format_type):
 
     elif format_type == "txt":
         content = ""
-        for msg in st.session_state.chat_history:
+        for msg in chat_history:
             prefix = "Utente: " if msg["role"] == "user" else "Assistente: "
             content += f"{prefix}{msg['content']}\n\n"
         return content.encode(), "text/plain", "conversazione.txt"
@@ -123,7 +145,7 @@ def export_chat(format_type):
         try:
             final_doc = Document()
 
-            for idx, msg in enumerate(st.session_state.chat_history, start=1):
+            for idx, msg in enumerate(chat_history, start=1):
                 text = msg.get("content", "").strip()
                 if not text:
                     continue
