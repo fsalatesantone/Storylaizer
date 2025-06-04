@@ -94,7 +94,7 @@ def ask_openai_analysis(history: List[Dict]
             messages=[
                 {"role": "system", "content": system_prompt_generale + system_prompt_analisi_df + data_context},
                 {"role":"assistant","function_call":msg.function_call},
-                {"role":"function","name":"execute_code","content":json.dumps(result)}
+                {"role":"function","name":"execute_code","content":json.dumps(str(result))}
             ]
         )
         return followup.choices[0].message.content
