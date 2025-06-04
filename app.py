@@ -6,67 +6,12 @@ from dotenv import load_dotenv
 import io
 import json
 from openai import OpenAI
-from api import get_api_key, ask_openai_analysis, ask_openai_report
-from ui_components import render_user_message, render_response, load_css, render_header, display_chat_history, render_conversation_options, render_data_preview, render_download_conversation
+from ui_components import handle_chat_input, render_user_message, render_response, load_css, render_header, display_chat_history, render_conversation_options, render_data_preview, render_download_conversation
 from utils import reset_conversation, init_session_state, export_chat, execute_code
 
 max_righe_per_report = 250 # Numero massimo di righe per generare un report
 if not os.environ.get("STREAMLIT_SHARING"):
     load_dotenv()
-
-def handle_chat_input(key, chat_history):
-    """Gestisce l'input della chat con una chiave univoca"""
-    pending_key = f"pending_user_message{key}"
-    if pending_key not in st.session_state:
-        st.session_state[pending_key] = None
-    
-    if st.session_state[pending_key]:
-        user_input = st.session_state[pending_key]
-        st.session_state[pending_key] = None
-        
-        render_user_message(user_input)
-        chat_history.append({"role": "user", "content": user_input})
-        st.session_state[f"conversation_started{key}"] = True
-        
-        with st.chat_message("assistant"):
-            loading_placeholder = st.empty()
-            loading_placeholder.markdown("🧠 *Storylaizer sta scrivendo...*")
-
-            # Scelgo il DataFrame e la funzione di OpenAI in base alla tab (key)
-            if key == "1": # Se siamo nel tab 1 e la domanda contiene analisi dati, facciamo function-calling 
-                risposta = ask_openai_analysis(history = chat_history
-                                            , model = st.session_state.get("selected_model", "gpt-4.1-nano")
-                                            , df = st.session_state.get("dataframe", None)
-                                            , temperature = st.session_state.get("temperature", 0.7)
-                                            , top_p = st.session_state.get("top_p", 1.0)
-                                            )
-            elif key == "2": # Nel tab 2 non deve fare function-calling, ma solo report
-                risposta = ask_openai_report(history = chat_history
-                                             , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
-                                             , df = st.session_state.get("dataframe_report", None)
-                                             , temperature = st.session_state.get("temperature", 0.7)
-                                             , top_p = st.session_state.get("top_p", 1.0)
-                                            )
-            else:  # key == "3" # Nel tab 3 non deve fare function-calling, ma solo report (ma senza dati importati da excel)
-                risposta = ask_openai_report(history = chat_history
-                                             , model = st.session_state.get("selected_model", "gpt-4.1-nano") 
-                                             , df = None
-                                             , temperature = st.session_state.get("temperature", 0.7)
-                                             , top_p = st.session_state.get("top_p", 1.0)
-                                            )
-            loading_placeholder.empty()
-            render_response(risposta)
-            chat_history.append({"role": "assistant", "content": risposta})
-        
-        st.rerun()
-    
-    # Altrimenti mostra il campo input con chiave univoca
-    user_input = st.chat_input("Scrivi qualcosa...", key=key)
-    if user_input:
-        #st.session_state.pending_user_message = user_input
-        st.session_state[pending_key] = user_input
-        st.rerun()
-    
 
 def main():
     st.set_page_config(page_title="Storylaizer", layout="centered")

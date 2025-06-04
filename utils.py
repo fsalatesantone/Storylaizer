@@ -7,7 +7,6 @@ from docx import Document
 import markdown2
 from html2docx import html2docx
 import re
-
 from typing import Any
 import traceback
 

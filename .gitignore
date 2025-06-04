@@ -1,7 +1,8 @@
-# Nascondi file sensibili
+# Nascondi solo file sensibili, NON tutta la cartella
+.streamlit/secrets.toml
+
+# File di ambiente
 .env
-.streamlit/
-!/.streamlit/secrets.toml
 
 # Cache e file temporanei
 __pycache__/
