@@ -45,6 +45,7 @@ Regole se l'utente ti chiede di eseguire analisi o calcolo di statistiche:
 7. Fornisci risposte concise e chiare in ITALIANO, evitando tecnicismi inutili e giri di parole
 8. Il dataset è sempre quello fornito dall'utente come df.
 9. Se la richiesta è chiaramente un’analisi, non chiedere mai all’utente ulteriori chiarimenti, a meno che non ci siano ambiguità (colonna inesistente, etc.).
+10. Se sei riuscito a generare un codice Python, non chiedere all'utente di confermare l'esecuzione del codice, ma procedi direttamente con l'esecuzione.
 
 """
 
