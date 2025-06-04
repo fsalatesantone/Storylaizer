@@ -67,7 +67,6 @@ def ask_openai_analysis(history: List[Dict]
     Risponde alle domande sull'analisi dati usando function-calling Python solo se df è presente.
     """
     # Contesto dati
-    data_ctx = create_data_context(df)
     data_context = f"\n\n DATASET REPORT CONTEXT:\n{create_data_context(df)}"
 
     # Chiediamo al modello di produrre Python
@@ -90,7 +89,7 @@ def ask_openai_analysis(history: List[Dict]
         followup = client.chat.completions.create(
             model=model,
             messages=[
-                #*response.usage,  # oppure ricomporre i messaggi
+                {"role": "system", "content": system_prompt_generale + system_prompt_analisi_df + data_context},
                 {"role":"assistant","function_call":msg.function_call},
                 {"role":"function","name":"execute_code","content":json.dumps(result)}
             ]
