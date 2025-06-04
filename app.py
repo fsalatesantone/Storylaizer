@@ -14,7 +14,7 @@ if not os.environ.get("STREAMLIT_SHARING"):
     load_dotenv()
 
 def main():
-    st.set_page_config(page_title="Storylaizer", layout="centered")
+    st.set_page_config(page_title="Storylaizer",page_icon="img/logo.png", layout="centered")
     load_css()
     init_session_state()
     render_header()
