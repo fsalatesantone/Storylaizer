@@ -171,8 +171,8 @@ def main():
     # Contenuto della terza tab (Chat)
     with tab3: 
         st.markdown(f"""<div class='mode-title'>Parla con l'assistente AI</div>
-                    <div class='mode-subtitle'>Fornisci all'assistente dei dati sui quali generare un report, incollandoli direttamente nella chat.<br>
-                    Riporta anche una <i>descrizione</i> dei dati caricati fornendo dettagli sul significato delle colonne, 
+                    <div class='mode-subtitle'>L'assistente è in grado di generare un report a partire da dati incollati direttamente nella chat.<br>
+                    E' consigliato riportare anche una <i>descrizione</i> dei dati caricati, fornendo dettagli sul significato delle colonne, 
                     il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
                     Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br>
                     Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
