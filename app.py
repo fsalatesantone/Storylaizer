@@ -69,8 +69,8 @@ def main():
                         <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> basati sui dati caricati a partire da un file <i>Excel</i>.<br><br>
                     Fornisci una <i>descrizione</i> dei dati caricati specificando dettagli sul significato delle colonne, 
                         il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                        Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br>
-                        Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.
+                        Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br><br>
+                        Ricorda che è possibile generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.
                         <br><br>
                         Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
                         Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o effettuare dei <strong>calcoli</strong>, passa alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
@@ -119,8 +119,8 @@ def main():
                     <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> a partire da dati incollati direttamente nella chat.<br><br>
                     E' consigliato riportare anche una <i>descrizione</i> dei dati caricati, fornendo dettagli sul significato delle colonne, 
                     il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                    Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione della seguente tabella <TABELLA>[COPIA QUI I DATI]</TABELLA>, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br>
-                    Ricorda che è possibile generare report a partire da una tabella con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
+                    Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione della seguente tabella <TABELLA>[COPIA QUI I DATI]</TABELLA>, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br><br>
+                    Ricorda che è possibile generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
                     Puoi anche decidere di generare un <strong>report</strong> a partire da un <i>file Excel</i>: passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
                     Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o a calcolare <strong>metriche</strong> specifiche, vai alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
                     </div><br>"""

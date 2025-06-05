@@ -277,7 +277,18 @@ def render_conversation_options(tab_key, conversation_started):
             list(modelli.keys()),
             index=0,  # Default su GPT-4.1 Nano
             key=model_key,
-            disabled=False
+            disabled=False,
+            help=(
+        r"""
+        **Modelli disponibili**
+        
+        - **GPT-4.1 Nano**: modello leggero ed economico (∼\$0.10/1M token in e \$0.40/1M token out), ideale per prompt non complessi e risposte veloci. E' il modello predefinito, generalmente consigliato per la maggior parte delle analisi.
+        - **GPT-4.1 Mini**: compromesso tra costo e qualità (∼\$0.40/1M token in e \$1.60/1M token out)
+        consigliato per analisi di media complessità
+        - **GPT-4.1**: modello completo più “potente” e costoso (∼\$2.00/1M token in e \$8.00/1M token out)
+        adatto per prompt lunghi o che richiedono ragionamenti più elaborati. Utilizzare solo in caso di reale necessità.
+        """
+    )
         )
         st.session_state["selected_model"] = modelli[modello_label]
         
@@ -289,7 +300,14 @@ def render_conversation_options(tab_key, conversation_started):
             value=0.7,
             step=0.1,
             disabled=False,
-            key=temp_key
+            key=temp_key,
+            help=("""
+                    **Temperature**: controlla la casualità delle risposte del modello.
+
+                    - **Valori bassi** (es. 0.0–0.3) rendono il modello più deterministico e focalizzato.
+                    - **Valori alti** (es. 1.0–2.0) ne aumentano la casualità e la varietà.
+                    """
+            )
         )
         
         st.session_state["top_p"] = st.slider(
@@ -299,5 +317,11 @@ def render_conversation_options(tab_key, conversation_started):
             value=1.0,
             step=0.05,
             disabled=False,
-            key=top_p_key
+            key=top_p_key,
+            help=("""
+                    **Top-p**: controlla la distribuzione delle risposte del modello (*nucleus sampling*), considerando *solo* le parole con probabilità cumulativa *≤ top-p*.
+
+                    - **Valori bassi** (es. 0.0–0.3): il modello si concentra sulle parole più probabili, offrendo risultati più coerenti e sicuri
+                    - **Valori alti** (es. 0.8–1.0): il modello include parole meno probabili, aumentando la varietà delle risposte e introducendo maggiore creatività.
+                    """)
         )
