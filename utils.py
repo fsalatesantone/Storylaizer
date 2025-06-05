@@ -59,73 +59,118 @@ def init_session_state():
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(time.time())
 
-# Esportazione chat in vari formati
 def export_chat(format_type, chat_history):
-    #if not st.session_state.chat_history:
     if chat_history == []:
         st.warning("Non ci sono messaggi da esportare.")
         return None
 
     if format_type == "xlsx":
-        conv_rows = []
-        tables = []
-        tbl_idx = 0
+        conv_rows = []   # Lista di dict: ogni dict rappresenta una riga in Conversazione
 
         for msg in chat_history:
             role = "Utente" if msg["role"] == "user" else "Assistente"
             content = msg["content"] or ""
             lines = content.splitlines()
 
-            # Riconoscimento di blocco tabella Markdown (header + separator)
-            if (
-                len(lines) >= 2
-                and re.match(r"^\|(.+\|)+\s*$", lines[0])
-                and re.match(r"^\|\s*[-:]+\s*(\|\s*[-:]+\s*)+\|\s*$", lines[1])
-            ):
-                # Parsiamo header e righe
-                headers = [h.strip() for h in lines[0].strip("|").split("|")]
-                data_rows = []
-                for row in lines[2:]:
-                    if not row.strip().startswith("|"):
-                        break
-                    data_rows.append([c.strip() for c in row.strip("|").split("|")])
+            # Se il messaggio è vuoto, lo tratto come riga unica di testo vuoto
+            if not lines:
+                conv_rows.append({"Ruolo": role, "Messaggio": ""})
+                continue
 
-                # Crea DataFrame della tabella
-                df_tbl = pd.DataFrame(data_rows, columns=headers)
-                tbl_idx += 1
-                tables.append((f"Tabella {tbl_idx}", df_tbl))
+            i = 0
+            # Scorro tutte le righe di questo messaggio
+            while i < len(lines):
+                # Caso 1: incontro un possibile blocco-tabella Markdown
+                # Deve esserci almeno una riga per header e una riga per separatore
+                if (
+                    i + 1 < len(lines)
+                    and re.match(r"^\|(.+\|)+\s*$", lines[i])
+                    and re.match(r"^\|\s*[-:]+\s*(\|\s*[-:]+\s*)+\|\s*$", lines[i+1])
+                ):
+                    # Trovo la tabella a partire da lines[i]
+                    headers = [h.strip() for h in lines[i].strip("|").split("|")]
 
-                # Nella conversazione inseriamo un placeholder
-                conv_rows.append({
-                    "Ruolo": role,
-                    "Messaggio": f"[Tabella {tbl_idx}]"
-                })
-            else:
-                # Messaggio normale
-                conv_rows.append({
-                    "Ruolo": role,
-                    "Messaggio": content
-                })
+                    # Raccolgo tutte le righe dati fino a che iniziano con ‘|’
+                    data_rows = []
+                    j = i + 2
+                    while j < len(lines) and lines[j].strip().startswith("|"):
+                        data_rows.append([c.strip() for c in lines[j].strip("|").split("|")])
+                        j += 1
 
-        # Costruiamo DataFrame conversazione
-        df_conv = pd.DataFrame(conv_rows)
+                    # 1) Se prima della tabella c’erano righe di testo “normale”, le inserisco in una riga separata
+                    #    (solo se i > partenza di questo segmento)
+                    #    Qui però, siccome stiamo entrando solo quando troviamo la tabella, 
+                    #    eventuali righe di testo provenienti da cicli precedenti sono già state gestite.
 
-        # Scriviamo su Excel con più sheet
+                    # 2) Inserisco la riga “header” della tabella nel foglio Excel:
+                    row_header = {"Ruolo": role}
+                    for idx, hdr in enumerate(headers, start=1):
+                        row_header[f"Col{idx}"] = hdr
+                    conv_rows.append(row_header)
+
+                    # 3) Inserisco le righe dati, con colonna “Ruolo” vuota
+                    for data in data_rows:
+                        row_data = {"Ruolo": ""}
+                        for idx, val in enumerate(data, start=1):
+                            row_data[f"Col{idx}"] = val
+                        conv_rows.append(row_data)
+
+                    # 4) Salto tutto il blocco tabella
+                    i = j
+
+                else:
+                    # Caso 2: questa riga NON fa parte di una tabella markdown.
+                    # Resto in “modalità testo normale” finché non trovo l’inizio di una tabella
+                    testo_accumulato = []
+                    while i < len(lines):
+                        # Se la riga corrente è inizio di tabella, interrompo il “testo normale”
+                        if (
+                            i + 1 < len(lines)
+                            and re.match(r"^\|(.+\|)+\s*$", lines[i])
+                            and re.match(r"^\|\s*[-:]+\s*(\|\s*[-:]+\s*)+\|\s*$", lines[i+1])
+                        ):
+                            break
+                        # Altrimenti accumulo questa riga in testo_accumulato
+                        testo_accumulato.append(lines[i])
+                        i += 1
+
+                    # Inserisco tutto il blocco “testo normale” in un’unica riga nel DataFrame
+                    testo_unico = "\n".join(testo_accumulato).strip()
+                    conv_rows.append({
+                        "Ruolo": role,
+                        "Messaggio": testo_unico
+                    })
+                    # Torno nel loop principale (che controllerà di nuovo se ora ci sono tabelle)
+            # Fine while i < len(lines)
+
+        # A questo punto conv_rows contiene sia:
+        # - righe con chiavi “Ruolo” + “Messaggio” (messaggi normali)
+        # - righe con chiavi “Ruolo” vuoto o “Ruolo” + Col1, Col2, ... (per le tabelle)
+
+        # Costruisco il DataFrame rettangolare, unificando tutte le colonne possibili
+        df_conv = pd.DataFrame(conv_rows).fillna("")
+
+        # Compongo l’ordine definitivo delle colonne:
+        #   1) “Ruolo”
+        #   2) “Messaggio” (se presente)
+        #   3) tutte le “Col1”, “Col2”, ... in ordine numerico
+        tutte_colonne = ["Ruolo"]
+        if "Messaggio" in df_conv.columns:
+            tutte_colonne.append("Messaggio")
+
+        col_tabella = sorted(
+            [c for c in df_conv.columns if c.startswith("Col")],
+            key=lambda x: int(x.replace("Col", ""))
+        )
+        tutte_colonne.extend(col_tabella)
+
+        # Ricreo il DataFrame con solo queste colonne, riempiendo eventuali buchi con stringhe vuote
+        df_final = df_conv.reindex(columns=tutte_colonne).fillna("")
+
+        # Scrittura su Excel in un unico foglio “Conversazione”
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            # Foglio principale
-            df_conv.to_excel(
-                writer,
-                index=False,
-                sheet_name="Conversazione"
-            )
-            # Fogli delle tabelle
-            for sheet_name, df_tbl in tables:
-                df_tbl.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name=sheet_name
-                )
+            df_final.to_excel(writer, index=False, sheet_name="Conversazione")
 
         return (
             output.getvalue(),
@@ -152,55 +197,42 @@ def export_chat(format_type, chat_history):
                 role = "Utente" if msg["role"] == "user" else "Assistente"
                 markdown_text = f"**{role}:**\n\n{text}"
 
-                # 1) Prova a convertire TUTTO in HTML (inclusi i blocchi tabella)
-                html = markdown2.markdown(
-                    markdown_text,
-                    extras=["tables", "fenced-code-blocks"]
-                )
-
+                # Provo a convertire tutto in HTML (inclusi i blocchi tabella)
+                html = markdown2.markdown(markdown_text, extras=["tables", "fenced-code-blocks"])
                 try:
-                    # 2) html2docx con parametro title
                     temp_stream = html2docx(html, title=f"msg_{idx}")
                     from docx import Document as _Doc
                     temp_doc = _Doc(io.BytesIO(temp_stream.getvalue()))
-
-                    # 3) Unisci i nodi XML
                     for element in temp_doc.element.body:
                         final_doc.element.body.append(element)
-
                 except Exception:
-                    # --- Fallback manual per tabelle Markdown ---
+                    # Fallback manual per tabelle Markdown
                     lines = markdown_text.splitlines()
-                    # riconosco un blocco tabella in stile Markdown
                     if (len(lines) >= 3
                         and re.match(r"^\|.+\|$", lines[0])
                         and re.match(r"^\|\s*[-:]+\s*(\|\s*[-:]+\s*)+\|$", lines[1])):
-                        # intestazioni
+
                         headers = [h.strip() for h in lines[0].strip("|").split("|")]
-                        # righe
                         data_rows = []
                         for row in lines[2:]:
                             if not row.strip().startswith("|"):
                                 break
                             data_rows.append([c.strip() for c in row.strip("|").split("|")])
 
-                        table = final_doc.add_table(rows=1+len(data_rows), cols=len(headers))
-                        # header row
+                        table = final_doc.add_table(rows=1 + len(data_rows), cols=len(headers))
+
+
                         for i, hdr in enumerate(headers):
                             table.rows[0].cells[i].text = hdr
-                        # body
                         for r, row in enumerate(data_rows, start=1):
                             for c, val in enumerate(row):
                                 table.rows[r].cells[c].text = val
-
                         final_doc.add_paragraph("")  # spazio dopo la tabella
                     else:
-                        # se non è tabella, aggiungo il blocco come paragrafo semplice
                         p = final_doc.add_paragraph()
                         p.add_run(markdown_text)
 
-                # spazio tra i messaggi
-                final_doc.add_paragraph("")
+                final_doc.add_paragraph("")  # spazio tra i messaggi
 
             output = io.BytesIO()
             final_doc.save(output)
@@ -209,7 +241,6 @@ def export_chat(format_type, chat_history):
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "conversazione.docx"
             )
-
         except ImportError:
             st.error(
                 "Per esportare in DOCX con Markdown servono: "

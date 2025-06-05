@@ -20,11 +20,11 @@ def main():
     render_header()
 
     # Utilizzo st.tabs invece di st.radio
-    tab1, tab2, tab3 = st.tabs(["📊 Analizza un file", "📋 Genera un report", "💬 Parla con l'assistente AI"])
+    tab1, tab2, tab3 = st.tabs(["🔍 Data Analyzer", "📝 Report Builder", "🤖 AI Chat"])
     
     # Contenuto della prima tab (Analizza file)
     with tab1:
-        st.markdown("""<div class='mode-title'>Analizza un file</div>
+        st.markdown("""<div class='mode-title'>Analisi esplorativa di un file Excel</div>
                     <div class='mode-subtitle'>L'assistente è in grado di eseguire <strong>analisi dati</strong>, <strong>calcolo di statistiche</strong>
                     , <strong>filtri</strong> e <strong>aggregazioni</strong> sui dati caricati all'interno di un file <strong>Excel</strong>: riesce  
                     ad interpretare le richieste in <i>linguaggio naturale</i> convertendole in istruzioni per l'elaborazione a sistema.<br><br>
@@ -61,11 +61,12 @@ def main():
             render_download_conversation(tab_key="file_tab", chat_history=st.session_state.chat_history1, conversation_started=st.session_state.conversation_started1)
 
             # Visualizza la cronologia, poi l'input in basso
+            st.markdown("""<div class='mode-title'>Scrivi a Storylaizer</div>""", unsafe_allow_html=True)
             display_chat_history(chat_history=st.session_state.chat_history1)
             handle_chat_input(key="1", chat_history=st.session_state.chat_history1)
 
     with tab2:
-        st.markdown(f"""<div class='mode-title'>Genera un report</div>
+        st.markdown(f"""<div class='mode-title'>Generazione automatica di report</div>
                         <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> basati sui dati caricati a partire da un file <i>Excel</i>.<br><br>
                     Fornisci una <i>descrizione</i> dei dati caricati specificando dettagli sul significato delle colonne, 
                         il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
@@ -108,6 +109,7 @@ def main():
             render_download_conversation(tab_key="report_tab", chat_history=st.session_state.chat_history2, conversation_started=st.session_state.conversation_started2)
 
             # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
+            st.markdown("""<div class='mode-title'>Scrivi a Storylaizer</div>""", unsafe_allow_html=True)
             display_chat_history(chat_history=st.session_state.chat_history2)
             handle_chat_input(key="2", chat_history=st.session_state.chat_history2)
             
@@ -115,7 +117,7 @@ def main():
     
     # Contenuto della terza tab (Chat)
     with tab3: 
-        st.markdown(f"""<div class='mode-title'>Parla con l'assistente AI</div>
+        st.markdown(f"""<div class='mode-title'>Dialoga con l'assistente AI</div>
                     <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> a partire da dati incollati direttamente nella chat.<br><br>
                     E' consigliato riportare anche una <i>descrizione</i> dei dati caricati, fornendo dettagli sul significato delle colonne, 
                     il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
@@ -129,6 +131,7 @@ def main():
         render_download_conversation(tab_key="chat_tab", chat_history=st.session_state.chat_history3, conversation_started=st.session_state.conversation_started3)
         
         # CORREZIONE: Prima visualizza la cronologia, poi l'input in basso
+        st.markdown("""<div class='mode-title'>Scrivi a Storylaizer</div>""", unsafe_allow_html=True)
         display_chat_history(chat_history=st.session_state.chat_history3)
         handle_chat_input(key="3", chat_history=st.session_state.chat_history3)
 

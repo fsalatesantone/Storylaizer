@@ -1,7 +1,0 @@
-[auth]
-enabled = true
-email_addresses = ["f.salatesantone@gmail.com", "francesco.salatesantone@tagliacarne.it"]
-
-# La lista di email è solo un filtro autorizzativo, che si applica dopo l'autenticazione via Google/GitHub. 
-# Nessuno può “provare a indovinare” o “bypassare” l’accesso semplicemente conoscendo le email.
-# L’autenticazione configurata via streamlit.toml funziona solo su Streamlit Cloud, non viene richiesta quando l'app è lanciata in locale

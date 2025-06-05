@@ -70,38 +70,63 @@ def render_user_message(message):
     )
 
 def render_response(content):
-    pattern = r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\]|\[.*?\])"
-    parts = re.split(pattern, content, flags=re.DOTALL)
-
-    for part in parts:
-        # 1) formula LaTeX $$ … $$
-        if part.startswith("$$") and part.endswith("$$"):
-            formula = part.strip("$$")
-            # Se ci fosse %, lo escapiamo
-            formula = formula.replace("%", r"\%")
-            st.latex(formula)
-
-        # 2) formula LaTeX in-line $ … $
-        elif part.startswith("$") and part.endswith("$"):
-            formula = part.strip("$")
-            formula = formula.replace("%", r"\%")
-            st.markdown(f"${formula}$", unsafe_allow_html=True)
-
-        # 3) formula LaTeX tra \[ … \] (display mode)
-        elif part.startswith("\\[") and part.endswith("\\]"):
-            formula = part[2:-2]
-            formula = formula.replace("%", r"\%")
-            st.latex(formula)
-
-        # 4) formula tra LaTeX [ … ]
-        elif part.startswith("[") and part.endswith("]"):
-            # Estraggo il contenuto interno e scapo eventuali %
-            inner = part[1:-1].strip()
-            inner = inner.replace("%", r"\%")
-            st.latex(inner)
-
+    """
+    Renderizza il contenuto gestendo formule LaTeX e testo normale.
+    Mantiene il flusso del testo senza andare a capo inappropriatamente.
+    """
+    # Pattern per le formule LaTeX
+    # Cattura: $$...$$, $...$ (ma non singoli $ isolati), \[...\]
+    latex_pattern = r'(\$\$[^$]+\$\$|\$[^$\s][^$]*[^$\s]\$|\\\[[^\]]*\\\])'
+    
+    # Dividi il contenuto in parti: testo normale e formule LaTeX
+    parts = re.split(latex_pattern, content, flags=re.DOTALL)
+    
+    # Ricostruisci il contenuto processando le formule LaTeX
+    processed_content = ""
+    
+    for i, part in enumerate(parts):
+        if not part:  # Salta parti vuote
+            continue
+            
+        # Controlla se è una formula LaTeX
+        if re.match(latex_pattern, part):
+            # Gestisci le diverse tipologie di formule LaTeX
+            if part.startswith("$$") and part.endswith("$$"):
+                # Formula display (block) - la rendiamo separatamente
+                if processed_content.strip():
+                    # Renderizza il testo accumulato finora
+                    st.markdown(processed_content, unsafe_allow_html=True)
+                    processed_content = ""
+                
+                # Renderizza la formula display
+                formula = part[2:-2].strip()  # Rimuovi $$ ... $$
+                formula = formula.replace("%", r"\%")
+                st.latex(formula)
+                
+            elif part.startswith("\\[") and part.endswith("\\]"):
+                # Formula display con \[ ... \]
+                if processed_content.strip():
+                    st.markdown(processed_content, unsafe_allow_html=True)
+                    processed_content = ""
+                
+                formula = part[2:-2].strip()  # Rimuovi \[ ... \]
+                formula = formula.replace("%", r"\%")
+                st.latex(formula)
+                
+            elif part.startswith("$") and part.endswith("$"):
+                # Formula inline - la includiamo nel testo
+                formula = part[1:-1]  # Rimuovi $ ... $
+                formula = formula.replace("%", r"\%")
+                # Mantieni la formula inline nel flusso del testo
+                processed_content += f"${formula}$"
         else:
-            st.markdown(part, unsafe_allow_html=True)
+            # È testo normale - lo aggiungiamo al contenuto processato
+            processed_content += part
+    
+    # Renderizza l'eventuale contenuto rimanente
+    if processed_content.strip():
+        st.markdown(processed_content, unsafe_allow_html=True)
+
 
 def load_css():
     st.markdown("""
