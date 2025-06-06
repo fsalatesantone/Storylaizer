@@ -30,10 +30,16 @@ def main():
                     ad interpretare le richieste in <i>linguaggio naturale</i> convertendole in istruzioni per l'elaborazione a sistema.<br><br>
                     Prova a chiedere ad esempio di calcolare la <i>media</i> di una colonna o di <i>filtrare</i> le righe in base ad una condizione, facendo attenzione però 
                     a riferirti all'esatto nome della colonna (in caso di errori di battitura nel nome del campo, l'assistente potrebbe non riuscire a rispondere correttamente).
-                    Se dovessi ricevere un errore, prova a riformulare la domanda o a fornire più dettagli sui dati caricati.
-                    <br><br>
-                    Se invece sei interessato a generare un <strong>report</strong> a partire da un <i>file Excel</i>, passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
-                    Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
+                    Ecco alcuni <strong>esempi</strong> di comandi che puoi provare (ma ce ne sono molti altri!):<br>
+                    <ul>
+                        <li><em>“Escludendo l'ultima riga che contiene il totale, calcola la media del campo [INSERISCI VARIABILE]”</em></li>
+                        <li><em>“Stampa una tabella in cui, per ogni colonna del dataset, venga riportata la deviazione standard corrispondente”</em></li>
+                        <li><em>“Filtra tutte le righe in cui il valore di [COLONNA_X] è maggiore di 1000 e mostra solo le prime 10”</em></li>
+                        <li><em>“Raggruppa i dati per [COLONNA_Y] e somma il campo [COLONNA_Z] per ciascun gruppo”</em></li>
+                    </ul>
+                    Se dovessi <strong>ricevere un errore</strong>, prova a riformulare la domanda o a fornire più dettagli sui dati caricati.<br><br>
+                    Se invece sei interessato a generare un <strong>report</strong> a partire da un <i>file Excel</i>, passa alla <i>tab</i> <strong>"📝 Report Builder"</strong> in alto.<br>
+                    Poi anche decidere di generare un report utilizzando il tab <strong>"🤖 AI Chat"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
                     </div><br>"""
                     , unsafe_allow_html=True)
         
@@ -68,14 +74,18 @@ def main():
     with tab2:
         st.markdown(f"""<div class='mode-title'>Generazione automatica di report</div>
                         <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> basati sui dati caricati a partire da un file <i>Excel</i>.<br><br>
-                    Fornisci una <i>descrizione</i> dei dati caricati specificando dettagli sul significato delle colonne, 
-                        il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                        Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione presente nel dataset, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br><br>
-                        Ricorda che è possibile generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.
-                        <br><br>
-                        Poi anche decidere di generare un report utilizzando il tab <strong>"💬 Parla con l'assistente AI"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
-                        Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o effettuare dei <strong>calcoli</strong>, passa alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
-                        </div><br>"""
+                    <strong>Linee guida per il prompt:</strong><br>
+                    <ol type="1">
+                        <li>Fornisci una <strong>descrizione</strong> dettagliata dei dati: specifica il significato delle colonne, il periodo di riferimento, la fonte e il contesto.</li>
+                        <li>Poi, specifica le istruzioni di output: ad esempio <i>“Per ciascuna regione presente nel dataset, crea un testo di 500 caratteri e organizza risultati e numeri in una tabella.”</i></li>
+                        <li>Ricorda che l’assistente funziona meglio quante <em>più informazioni</em> ha a disposizione: descrivi chiaramente chi sono i destinatari del report, stile linguistico, e lo scopo finale.</li>
+                        <li>Se invece hai già un report “esempio” che ti piace (magari per una certa regione), incollalo nel prompt come modello. Ad esempio: 
+                            <i>"Ecco il report per la Regione X: [INCOLLA QUI TESTO REPORT]. Genera lo stesso tipo di report per le altre regioni."</i></li>
+                    </ol>
+                    <strong>Ricorda:</strong> puoi generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
+                    Poi anche decidere di generare un report utilizzando il tab <strong>"🤖 AI Chat"</strong> in alto, in questo caso però dovrai incollare la tabella direttamente nella chat. <br>
+                    Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o effettuare dei <strong>calcoli</strong>, passa alla <i>tab</i> <strong>"🔍 Data Analyzer"</strong> in alto.
+                    </div><br>"""
                         , unsafe_allow_html=True)
 
         n_righe_file = 0
@@ -118,14 +128,16 @@ def main():
     # Contenuto della terza tab (Chat)
     with tab3: 
         st.markdown(f"""<div class='mode-title'>Dialoga con l'assistente AI</div>
-                    <div class='mode-subtitle'>L'assistente è in grado di generare uno o più <strong>report</strong> a partire da dati incollati direttamente nella chat.<br><br>
-                    E' consigliato riportare anche una <i>descrizione</i> dei dati caricati, fornendo dettagli sul significato delle colonne, 
-                    il periodo di riferimento, la fonte, il contesto e altre informazioni che ritieni utili.<br>
-                    Successivamente specifica le <strong>istruzioni</strong> che l'assistente AI deve eseguire (es. <i>"Per ciascuna regione della seguente tabella <TABELLA>[COPIA QUI I DATI]</TABELLA>, genera un report di 500 caratteri e organizzalo in una tabella..."</i>).<br><br>
-                    Ricorda che è possibile generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
-                    Puoi anche decidere di generare un <strong>report</strong> a partire da un <i>file Excel</i>: passa alla <i>tab</i> <strong>"📋 Genera un report"</strong> in alto.<br>
-                    Se invece sei interessato ad effettuare un'<strong>analisi statistica</strong> o a calcolare <strong>metriche</strong> specifiche, vai alla <i>tab</i> <strong>"📊 Analizza un file"</strong> in alto.
-                    </div><br>"""
+                        <div class='mode-subtitle'>
+                        L'assistente AI è a tua disposizione per rispondere a <i>qualsiasi domanda</i> di <strong>statistica</strong>, 
+                        <strong>formule matematiche</strong>, <strong>metodologie di analisi</strong> e molto altro.<br><br>
+                        Puoi anche utilizzare l'assistente per creare uno o più <strong>report</strong> a partire da dati incollati direttamente nella chat: 
+                        ricorda di fornire una breve <i>descrizione</i> dei dati (colonne, periodo di riferimento, fonte, contesto, etc.) e di specificare le <i>istruzioni</i> per l’AI (ad esempio: 
+                        <i>"Per ciascuna regione della tabella qui sotto <TABELLA>[INCOLLA QUI I DATI]</TABELLA>, genera un report di 500 caratteri e organizzalo in una tabella."</i>). In questo caso, sappi che è possibile generare report a partire da una <strong>tabella</strong> con un massimo di <strong>{max_righe_per_report} righe</strong>.<br><br>
+                        Se invece vuoi interrogare direttamente un file Excel per calcoli avanzati o aggregazioni,
+                        torna al tab <strong>"🔍 Data Analyzer"</strong>; per report più strutturati a partire da Excel, 
+                        utilizza invece il tab <istrong>"📝 Report Builder"</strong> in alto.
+                        </div><br>"""
                     , unsafe_allow_html=True)
         render_conversation_options(tab_key="chat_tab", conversation_started=st.session_state.conversation_started3)
         render_download_conversation(tab_key="chat_tab", chat_history=st.session_state.chat_history3, conversation_started=st.session_state.conversation_started3)
