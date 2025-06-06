@@ -34,8 +34,8 @@ def main():
                     <ul>
                         <li><em>“Escludendo l'ultima riga che contiene il totale, calcola la media del campo [INSERISCI VARIABILE]”</em></li>
                         <li><em>“Stampa una tabella in cui, per ogni colonna del dataset, venga riportata la deviazione standard corrispondente”</em></li>
-                        <li><em>“Filtra tutte le righe in cui il valore di [COLONNA_X] è maggiore di 1000 e mostra solo le prime 10”</em></li>
-                        <li><em>“Raggruppa i dati per [COLONNA_Y] e somma il campo [COLONNA_Z] per ciascun gruppo”</em></li>
+                        <li><em>“Filtra tutte le righe in cui il valore di [INSERISCI VARIABILE] è maggiore di 1000 e mostra solo le prime 10”</em></li>
+                        <li><em>“Raggruppa i dati per [INSERISCI VARIABILE] e somma il campo [INSERISCI ALTRA VARIABILE] per ciascun gruppo”</em></li>
                     </ul>
                     Se dovessi <strong>ricevere un errore</strong>, prova a riformulare la domanda o a fornire più dettagli sui dati caricati.<br><br>
                     Se invece sei interessato a generare un <strong>report</strong> a partire da un <i>file Excel</i>, passa alla <i>tab</i> <strong>"📝 Report Builder"</strong> in alto.<br>
@@ -77,7 +77,7 @@ def main():
                     <strong>Linee guida per il prompt:</strong><br>
                     <ol type="1">
                         <li>Fornisci una <strong>descrizione</strong> dettagliata dei dati: specifica il significato delle colonne, il periodo di riferimento, la fonte e il contesto.</li>
-                        <li>Poi, specifica le istruzioni di output: ad esempio <i>“Per ciascuna regione presente nel dataset, crea un testo di 500 caratteri e organizza risultati e numeri in una tabella.”</i></li>
+                        <li>Poi, specifica le istruzioni di output: ad esempio <i>“Per ciascuna regione presente nel dataset, crea un testo di 500 caratteri e organizza il tutto in una tabella.”</i></li>
                         <li>Ricorda che l’assistente funziona meglio quante <em>più informazioni</em> ha a disposizione: descrivi chiaramente chi sono i destinatari del report, stile linguistico, e lo scopo finale.</li>
                         <li>Se invece hai già un report “esempio” che ti piace (magari per una certa regione), incollalo nel prompt come modello. Ad esempio: 
                             <i>"Ecco il report per la Regione X: [INCOLLA QUI TESTO REPORT]. Genera lo stesso tipo di report per le altre regioni."</i></li>
