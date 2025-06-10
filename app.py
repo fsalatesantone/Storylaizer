@@ -17,7 +17,8 @@ def main():
     st.set_page_config(page_title="Storylaizer", page_icon="img/storylaizer_favicon.png", layout="centered")
     load_css()
     init_session_state()
-    render_header()
+    #render_header()
+    st.image("img/storylaizer_logo.png")
 
     # Utilizzo st.tabs invece di st.radio
     tab1, tab2, tab3 = st.tabs(["🔍 Data Analyzer", "📝 Report Builder", "🤖 AI Chat"])
