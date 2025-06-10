@@ -196,18 +196,7 @@ def load_css():
     """, unsafe_allow_html=True)
 
 def render_header():
-    col1, col2 = st.columns([2, 6])
-    with col1:
-        st.image("./img/logo.png", width=150)
-    with col2:
-        st.markdown("""
-                    <div class="title-container">
-                        <h1 class="app-title">
-                            <span style="color:#0F3D6E;">Storyl</span><span style="color:#26B6DA;">ai</span><span style="color:#0F3D6E;">zer</span>
-                        </h1>
-                        <h6 class="app-subtitle" style="color:#0F3D6E;">Trasforma i tuoi dati in analisi AI-driven</h6>
-                    </div>
-        """, unsafe_allow_html=True)
+    st.image("./img/storylaizer_logo.png")
 
 
 def display_chat_history(chat_history):
@@ -218,9 +207,6 @@ def display_chat_history(chat_history):
         else:
             with st.chat_message("assistant"):
                 render_response(msg["content"])
-
-
-
 
 
 def render_data_preview(df):
